@@ -9,6 +9,7 @@ import (
 var (
 	ErrUserOrPassIncorrect = errors.New("usuario ou senha incorreto")
 	ErrNotFound            = errors.New("usuario nao existe")
+	ErrValueRequired       = errors.New("value is required")
 )
 
 // Entidade básica de usuário.
@@ -72,14 +73,29 @@ func NewAuthService(rpu RepositorioUsuario) *ServicoAutenticacao {
 
 func (s *ServicoAutenticacao) Login(nome, senha string) error {
 
-	usuario, err := s.repositorio.BuscaUsuario(nome)
+	if err := s.VerificarValor(nome, senha); err != nil { //verificar valor
+		return err
+	}
 
+	usuario, err := s.repositorio.BuscaUsuario(nome) //buscando no banco de dados
 	if err != nil {
 		return err
 	}
 
-	if usuario.Senha != senha {
+	if usuario.Senha != senha { // compararçao senhas
 		return ErrUserOrPassIncorrect
+	}
+
+	return nil
+}
+
+//--------------- VALIDAÇOES ---------------
+
+// verificando o valor nulo
+func (s *ServicoAutenticacao) VerificarValor(usuario, senha string) error {
+
+	if usuario == "" || senha == "" {
+		return ErrValueRequired
 	}
 
 	return nil
