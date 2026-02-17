@@ -3,13 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Erros de autenticação centralizados para evitar strings soltas no código.
 var (
-	ErrUserOrPassIncorrect = errors.New("usuario ou senha incorreto")
+	ErrUserOrPassIncorrect = errors.New("credencial invalida")
 	ErrNotFound            = errors.New("usuario nao existe")
 	ErrValueRequired       = errors.New("value is required")
+	ErrLenCarcterMax       = errors.New("utrapassou a quantidade de carcter")
 )
 
 // Entidade básica de usuário.
@@ -94,6 +96,30 @@ func (s *ServicoAutenticacao) Login(nome, senha string) error {
 // verificando o valor nulo
 func (s *ServicoAutenticacao) VerificarValor(usuario, senha string) error {
 
+	if err := s.ValidateEmpty(usuario, senha); err != nil {
+		return err
+
+	}
+
+	if err := s.validateMaxLength(usuario, senha); err != nil {
+		return err
+
+	}
+
+	return nil
+}
+
+// verificanco  quantidade minima de caracters
+func (s *ServicoAutenticacao) validateMaxLength(usuario, senha string) error {
+
+	if len(usuario) > 100 || len(senha) > 14 {
+		return ErrLenCarcterMax
+	}
+	return nil
+}
+
+func (s *ServicoAutenticacao) ValidateEmpty(usuario, senha string) error {
+
 	if usuario == "" || senha == "" {
 		return ErrValueRequired
 	}
@@ -108,21 +134,30 @@ func entrada() {
 	repositorio := NewRepositorioFake()
 	authService := NewAuthService(repositorio)
 
-	var usuario, senha string
+	for i := 0; i <= 5; i++ {
 
-	fmt.Print("Digite o usuario: ")
-	fmt.Scan(&usuario)
+		var usuario, senha string
 
-	fmt.Print("Digite a senha: ")
-	fmt.Scan(&senha)
+		fmt.Println("Digite o usuario: ")
+		fmt.Scan(&usuario)
+		usuario = strings.TrimSpace(usuario) //remove os espaços
 
-	err := authService.Login(usuario, senha)
-	if err != nil {
-		fmt.Println("Erro:", err)
+		fmt.Println("Digite a senha: ")
+		fmt.Scan(&senha)
+		senha = strings.TrimSpace(senha) //remove os espaços
+
+		err := authService.Login(usuario, senha)
+		if err != nil {
+			fmt.Println("Erro:", err)
+			continue
+		}
+
+		fmt.Println("Bem vindo!")
 		return
+
 	}
 
-	fmt.Println("Bem vindo!")
+	fmt.Println("Muitas tentativas. Acesso bloqueado.")
 }
 
 // ---------------- MAIN ----------------
